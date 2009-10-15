@@ -354,12 +354,12 @@
       (error "One of the prepositions ~S is needed"
              (for-as-arithmetic-prepositions nil)))
     (let* ((up-p (subsetp selected '(:below :upto :upfrom :from :to :by)))
-           (test (cond ((member :to selected) (if up-p #'> #'<))
-                       ((member :upto selected) #'>)
-                       ((member :below selected) #'>=)
-                       ((member :downto selected) #'<)
-                       ((member :above selected) #'<=)
-                       (t (constantly nil))))
+           (test (cond ((member :to selected) (if up-p '#'> '#'<))
+                       ((member :upto selected) '#'>)
+                       ((member :below selected) '#'>=)
+                       ((member :downto selected) '#'<)
+                       ((member :above selected) '#'<=)
+                       (t '(constantly nil))))
            (next `(,(if up-p '+ '-) ,var ,(or by 1))))
       (fill-in :inits `((when (funcall ,test ,var ,to) (loop-finish))))
       (setq *vars* (append *vars* `((,type ,var ,(or from 0))))
@@ -369,7 +369,7 @@
 	   
 (defun by-step-fun ()
   (if (not (preposition? :by))
-      #'cdr
+      '#'cdr
       (let ((step-fun-form (form1)))
 	(if (functionp step-fun-form)
 	    step-fun-form
