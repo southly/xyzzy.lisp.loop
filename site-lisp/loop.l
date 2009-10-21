@@ -91,8 +91,8 @@
       ,@clauses
       (t (error 'type-error :datum ,keyform :expected-type ',expected-type)))))
 
-(defvar *loop-clauses* (make-hash-table))
-(defvar *for-as-subclauses* (make-hash-table))
+(defvar *loop-clauses* nil)
+(defvar *for-as-subclauses* nil)
 (defvar *loop-name* nil)
 (defvar *loop-keyword* nil)
 (defvar *loop-raw-keyword* nil)
@@ -106,7 +106,7 @@
 (mapc
  #'(lambda (list)
      (let ((clause (pop list)))
-       (mapc #'(lambda (key) (setf (gethash key *loop-clauses*) clause)) list)))
+       (mapc #'(lambda (key) (push (cons key clause) *loop-clauses*)) list)))
  '((for-as-clause :for :as)
    (with-clause :with)
    (do-clause :do)
@@ -123,7 +123,7 @@
 (mapc
  #'(lambda (list)
      (let ((clause (pop list)))
-       (mapc #'(lambda (key) (setf (gethash key *for-as-subclauses*) clause))
+       (mapc #'(lambda (key) (push (cons key clause) *for-as-subclauses*))
 	     list)))
  '((for-as-arithmetic-subclause
     :from :downfrom :upfrom :to :downto :upto :below :above :by)
@@ -142,6 +142,10 @@
     (:summing . :sum)
     (:maximizing . :maximize)
     (:minimizing . :minimize)))
+
+(defun get-assoc (key alist)
+  (let ((r (assoc key alist)))
+    (values (cdr r) (not (null r)))))
 
 (defun normalize-keyword (key) (or (cdr (assoc key normalized-keywords)) key))
 
@@ -164,7 +168,7 @@
 
 (defun clause ()
   (multiple-value-bind (clause-f present-p)
-      (gethash *loop-keyword* *loop-clauses*)
+      (get-assoc *loop-keyword* *loop-clauses*)
     (unless present-p (error "Unknown loop keyword ~S" (string *loop-keyword*)))
     (funcall clause-f)))
 
@@ -285,7 +289,7 @@
   (unless *loop-tokens*
     (error "a preposition for a FOR-AS subclause is missing."))
   (let ((prep (preposition1)))
-    (multiple-value-bind (subclause present-p) (gethash prep *for-as-subclauses*)
+    (multiple-value-bind (subclause present-p) (get-assoc prep *for-as-subclauses*)
       (unless present-p
 	(error "Unknown preposition ~S for FOR-AS subclause." prep))
       (push prep *loop-tokens*)
